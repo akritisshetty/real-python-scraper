@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "54320:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-scraper}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-scraper}
+      POSTGRES_DB: ${DB_NAME:-scraper}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-scraper} -d ${DB_NAME:-scraper}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-scraper}:${DB_PASSWORD:-scraper}@db:5432/${DB_NAME:-scraper}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dbdata:
